@@ -24,13 +24,13 @@ class TestContrastFileDiscovery:
     def test_extract_contrast_info(self):
         """Test extracting information from filenames."""
         filepath = Path(
-            'sub-s01_ses-01_task-flanker_run-1_contrast-incongruent-congruent_rtmodel-rt_centered_stat-effect-size.nii.gz'
+            'sub-s01_ses-01_task-nBack_run-1_contrast-twoBack-oneBack_rtmodel-rt_centered_stat-effect-size.nii.gz'
         )
         subject, session, contrast, run = extract_contrast_info(filepath)
 
         assert subject == 'sub-s01'
         assert session == 'ses-01'
-        assert contrast == 'task-flanker_contrast-incongruent-congruent'
+        assert contrast == 'task-nBack_contrast-twoBack-oneBack'
         assert run == 'run-01'
 
     def test_find_all_contrast_files(self, sample_dataset):

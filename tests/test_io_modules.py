@@ -33,13 +33,13 @@ class TestFilenameExtraction:
     
     def test_extract_subject_id(self):
         """Test subject ID extraction."""
-        assert extract_subject_id('sub-s01_ses-02_task-faces_run-01_contrast-faces_effect-size.nii.gz') == 'sub-s01'
+        assert extract_subject_id('sub-s01_ses-01_task-nBack_run-1_contrast-twoBack-oneBack_rtmodel-rt_centered_stat-effect-size.nii.gz') == 'sub-s01'
         assert extract_subject_id('sub-s123_other_stuff.nii.gz') == 'sub-s123'
         assert extract_subject_id('no_subject_here.nii.gz') is None
         
     def test_extract_session_id(self):
         """Test session ID extraction."""
-        assert extract_session_id('sub-s01_ses-02_task-faces_run-01_contrast-faces_effect-size.nii.gz') == 'ses-02'
+        assert extract_session_id('sub-s01_ses-01_task-nBack_run-1_contrast-twoBack-oneBack_rtmodel-rt_centered_stat-effect-size.nii.gz') == 'ses-01'
         assert extract_session_id('ses-123_other_stuff.nii.gz') == 'ses-123'
         assert extract_session_id('no_session_here.nii.gz') is None
         
