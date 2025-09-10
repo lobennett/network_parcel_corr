@@ -13,6 +13,7 @@ from network_parcel_corr.io.writers import extract_and_group_by_parcel, save_to_
 from network_parcel_corr.core.similarity import (
     compute_within_subject_similarity,
     compute_between_subject_similarity,
+    compute_across_construct_similarity,
     classify_parcels,
 )
 
@@ -235,3 +236,71 @@ class TestSimilarityCalculations:
             == 'indiv_fingerprint'
         )
         assert classifications['test_contrast']['canonical_parcel'] == 'canonical'
+
+    def test_across_construct_similarity_excludes_variable_parcels(self, temp_dir):
+        """Test that across-construct similarity excludes variable parcels."""
+        hdf5_path = temp_dir / 'test_data.h5'
+
+        # Create test data with multiple contrasts in same construct
+        with h5py.File(hdf5_path, 'w') as f:
+            np.random.seed(42)
+            base_data = np.random.randn(100).astype(np.float32)
+
+            # Create two contrasts in the same construct
+            for contrast_name in ['task-test_contrast-1', 'task-test_contrast-2']:
+                contrast_group = f.create_group(contrast_name)
+
+                # Create parcels with different classifications
+                for parcel_name in ['variable_parcel', 'canonical_parcel']:
+                    parcel_group = contrast_group.create_group(parcel_name)
+
+                    # Add some test data
+                    record_group = parcel_group.create_group('sub-s01_ses-01_run-01')
+                    record_group.attrs['subject'] = 'sub-s01'
+                    record_group.attrs['session'] = 'ses-01'
+
+                    # Make contrasts correlated for testing
+                    if contrast_name == 'task-test_contrast-1':
+                        data = base_data + np.random.randn(100) * 0.1
+                    else:
+                        data = (
+                            base_data + np.random.randn(100) * 0.1
+                        )  # Similar to first
+
+                    record_group.create_dataset('voxel_values', data=data)
+
+        # Create construct mapping
+        construct_map = {
+            'Test Construct': ['task-test_contrast-1', 'task-test_contrast-2']
+        }
+
+        # Create parcel classifications (variable_parcel should be excluded)
+        classifications = {
+            'task-test_contrast-1': {
+                'variable_parcel': 'variable',
+                'canonical_parcel': 'canonical',
+            },
+            'task-test_contrast-2': {
+                'variable_parcel': 'variable',
+                'canonical_parcel': 'canonical',
+            },
+        }
+
+        # Test with classifications (should exclude variable parcels)
+        results_with_exclusion = compute_across_construct_similarity(
+            hdf5_path, construct_map, classifications
+        )
+
+        # Test without classifications (should include all parcels)
+        results_without_exclusion = compute_across_construct_similarity(
+            hdf5_path, construct_map, None
+        )
+
+        # Verify variable parcels are excluded when classifications provided
+        for contrast_name in ['task-test_contrast-1', 'task-test_contrast-2']:
+            assert 'variable_parcel' not in results_with_exclusion[contrast_name]
+            assert 'canonical_parcel' in results_with_exclusion[contrast_name]
+
+            # Without exclusion, both parcels should be present
+            assert 'variable_parcel' in results_without_exclusion[contrast_name]
+            assert 'canonical_parcel' in results_without_exclusion[contrast_name]

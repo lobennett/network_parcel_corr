@@ -111,12 +111,28 @@ def compute_between_subject_similarity(hdf5_path: Path) -> Dict[str, Dict[str, f
 
 
 def compute_across_construct_similarity(
-    hdf5_path: Path, construct_to_contrast_map: Dict[str, List[str]]
+    hdf5_path: Path,
+    construct_to_contrast_map: Dict[str, List[str]],
+    parcel_classifications: Dict[str, Dict[str, str]] = None,
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     """
     Compute across-construct correlations for each contrast-parcel.
     For each contrast, compute correlations across all contrasts within the same constructs.
-    Returns nested dict: {contrast_name: {parcel_name: {construct_name: correlation}}}
+    Excludes parcels classified as 'variable' from the computation.
+
+    Parameters
+    ----------
+    hdf5_path : Path
+        Path to the HDF5 file containing the data
+    construct_to_contrast_map : Dict[str, List[str]]
+        Mapping from construct names to contrast lists
+    parcel_classifications : Dict[str, Dict[str, str]], optional
+        Parcel classifications to exclude 'variable' parcels
+
+    Returns
+    -------
+    Dict[str, Dict[str, Dict[str, float]]]
+        Nested dict: {contrast_name: {parcel_name: {construct_name: correlation}}}
     """
     results = {}
 
@@ -139,6 +155,15 @@ def compute_across_construct_similarity(
             constructs = find_constructs_for_contrast(contrast_name)
 
             for parcel_name in contrast_group.keys():
+                # Skip variable parcels if classifications are provided
+                if (
+                    parcel_classifications
+                    and contrast_name in parcel_classifications
+                    and parcel_name in parcel_classifications[contrast_name]
+                    and parcel_classifications[contrast_name][parcel_name] == 'variable'
+                ):
+                    continue
+
                 results[contrast_name][parcel_name] = {}
 
                 for construct in constructs:

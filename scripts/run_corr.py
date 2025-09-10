@@ -186,10 +186,25 @@ def main():
             atlas_parcels=args.atlas_parcels,
         )
 
-        # Compute across-construct similarity
-        logger.info('Computing across-construct similarity...')
+        # Count variable parcels for logging
+        variable_parcel_count = 0
+        total_parcel_count = 0
+        for contrast, parcels in results['classifications'].items():
+            for parcel, classification in parcels.items():
+                total_parcel_count += 1
+                if classification == 'variable':
+                    variable_parcel_count += 1
+
+        logger.info(
+            f'Excluding {variable_parcel_count} variable parcels from across-construct similarity (out of {total_parcel_count} total)'
+        )
+
+        # Compute across-construct similarity (excluding variable parcels)
+        logger.info(
+            'Computing across-construct similarity (excluding variable parcels)...'
+        )
         across_construct_similarities = compute_across_construct_similarity(
-            results['hdf5_path'], construct_map
+            results['hdf5_path'], construct_map, results['classifications']
         )
         results['across_construct_similarities'] = across_construct_similarities
 
