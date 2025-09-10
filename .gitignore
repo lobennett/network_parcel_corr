@@ -1,3 +1,7 @@
+# outfiles
+log/
+output/
+
 # dotenv file
 .env
 

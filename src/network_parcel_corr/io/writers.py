@@ -274,6 +274,10 @@ def save_to_hdf5(grouped_by_contrast: Dict, output_dir: Path) -> Path:
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     combined_hdf5_path = output_dir / 'all_contrasts.h5'
+    
+    # Remove existing file if it exists to ensure clean start
+    if combined_hdf5_path.exists():
+        combined_hdf5_path.unlink()
 
     with h5py.File(combined_hdf5_path, 'w') as f:
         # Add top-level metadata

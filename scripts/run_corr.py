@@ -21,6 +21,7 @@ import h5py
 from network_parcel_corr.main import run_analysis
 from network_parcel_corr.core.similarity import compute_across_construct_similarity
 from network_parcel_corr.data.construct_mappings import CONSTRUCT_TO_CONTRAST_MAP
+from network_parcel_corr.postprocessing.export import export_all_postprocessing_results
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -266,6 +267,20 @@ def main():
 
         # Save results to HDF5 file
         save_results_to_hdf5(results, results['hdf5_path'])
+
+        # Export postprocessing results to CSV
+        logger.info('\nExporting postprocessing results...')
+        try:
+            postprocessing_paths = export_all_postprocessing_results(
+                results['within_similarities'],
+                results['between_similarities'], 
+                results['classifications'],
+                args.output_dir,
+                top_n=50
+            )
+            logger.info('Postprocessing results exported successfully!')
+        except Exception as e:
+            logger.warning(f'Failed to export postprocessing results: {e}')
 
         logger.info(f'\nResults saved to: {results["hdf5_path"]}')
         logger.info('Analysis completed successfully!')
