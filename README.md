@@ -4,11 +4,12 @@ A neuroimaging analysis pipeline for computing parcel-based correlation patterns
 
 ## Overview
 
-This pipeline performs three distinct correlation analyses for each brain parcel:
+This pipeline performs four distinct correlation analyses for each brain parcel:
 
 1. **Within-Subject Similarity** - Computes mean correlations across sessions within each individual subject
 2. **Between-Subject Similarity** - Calculates correlations between different subjects across all sessions
-3. **Parcel Classification** - Classifies parcels as Variable, Individual Fingerprint, or Canonical based on correlation patterns
+3. **Across-Construct Similarity** - Analyzes correlations across contrasts within cognitive constructs
+4. **Parcel Classification** - Classifies parcels as Variable, Individual Fingerprint, or Canonical based on correlation patterns
 
 ## Installation
 
@@ -35,7 +36,8 @@ uv sync
 uv run python3 scripts/run_corr.py \
     --output-dir "./output" \
     --exclusions-file "/path/to/exclusions.json" \
-    --subjects sub-s03 sub-s10 sub-s19
+    --subjects sub-s03 sub-s10 sub-s19 \
+    --construct-contrast-map "/path/to/custom_mapping.json"
 ```
 
 #### SLURM Job Submission
@@ -100,6 +102,7 @@ network_parcel_corr/
 ├── src/network_parcel_corr/
 │   ├── atlases/           # Atlas loading (Schaefer via TemplateFlow)
 │   ├── core/              # Core similarity calculations
+│   ├── data/              # Default construct-contrast mappings
 │   ├── io/                # File I/O operations
 │   └── main.py            # Main pipeline orchestration
 ├── scripts/               # Analysis execution scripts
@@ -119,6 +122,7 @@ The analysis produces several output files:
 - **`./output/all_contrasts.h5`**: Complete dataset with:
   - Raw voxel data organized by contrast/parcel/session
   - Within/between-subject similarity values as HDF5 attributes
+  - Across-construct similarity values as HDF5 attributes
   - Parcel classifications
   - Global summary statistics
 
@@ -139,6 +143,7 @@ The analysis produces several output files:
         ├── session
         ├── within_subject_similarity
         ├── between_subject_similarity
+        ├── across_construct_similarity_[construct_name]
         └── parcel_classification
 ```
 
@@ -146,13 +151,14 @@ The analysis produces several output files:
 
 ### Command Line Arguments
 
-| Argument            | Description                       | Default                                                |
-| ------------------- | --------------------------------- | ------------------------------------------------------ |
-| `--subjects`        | Subject IDs to analyze            | sub-s03, sub-s10, sub-s19, sub-s29, sub-s43            |
-| `--input-dir`       | Input directory with subject data | /scratch/users/logben/poldrack_glm/level1/output       |
-| `--output-dir`      | Output directory for results      | /scratch/users/logben/poldrack_glm/correlations/output |
-| `--atlas-parcels`   | Number of Schaefer atlas parcels  | 400                                                    |
-| `--exclusions-file` | Path to JSON exclusions file      | **Required**                                           |
+| Argument                   | Description                             | Default                                                |
+| -------------------------- | --------------------------------------- | ------------------------------------------------------ |
+| `--subjects`               | Subject IDs to analyze                  | sub-s03, sub-s10, sub-s19, sub-s29, sub-s43            |
+| `--input-dir`              | Input directory with subject data       | /scratch/users/logben/poldrack_glm/level1/output       |
+| `--output-dir`             | Output directory for results            | /scratch/users/logben/poldrack_glm/correlations/output |
+| `--atlas-parcels`          | Number of Schaefer atlas parcels        | 400                                                    |
+| `--exclusions-file`        | Path to JSON exclusions file            | **Required**                                           |
+| `--construct-contrast-map` | Path to JSON construct-contrast mapping | Uses default mapping                                   |
 
 ### Exclusions File Format
 
@@ -176,6 +182,29 @@ The analysis produces several output files:
   ]
 }
 ```
+
+### Construct-Contrast Mapping Format
+
+The construct-contrast mapping defines which contrasts belong to each cognitive construct for across-construct similarity analysis:
+
+```json
+{
+  "Working Memory": [
+    "task-nBack_contrast-match-mismatch",
+    "task-nBack_contrast-twoBack-oneBack"
+  ],
+  "Cognitive Control": [
+    "task-flanker_contrast-incongruent-congruent",
+    "task-stopSignal_contrast-go"
+  ],
+  "Task Switching": [
+    "task-cuedTS_contrast-cue_switch_cost",
+    "task-spatialTS_contrast-cue_switch_cost"
+  ]
+}
+```
+
+If no custom mapping is provided via `--construct-contrast-map`, the system uses a comprehensive default mapping defined in `src/network_parcel_corr/data/construct_mappings.py` with 11 cognitive constructs including Active Maintenance, Flexible Updating, Monitoring, Interference Control, and others.
 
 ## Development
 

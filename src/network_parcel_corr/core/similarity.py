@@ -111,22 +111,22 @@ def compute_between_subject_similarity(hdf5_path: Path) -> Dict[str, Dict[str, f
 
 
 def compute_across_construct_similarity(
-    hdf5_path: Path, contrast_to_subconstruct_map: Dict[str, List[str]]
+    hdf5_path: Path, construct_to_contrast_map: Dict[str, List[str]]
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     """
     Compute across-construct correlations for each contrast-parcel.
-    For each contrast, compute correlations across all contrasts within the same subconstructs.
-    Returns nested dict: {contrast_name: {parcel_name: {subconstruct_name: correlation}}}
+    For each contrast, compute correlations across all contrasts within the same constructs.
+    Returns nested dict: {contrast_name: {parcel_name: {construct_name: correlation}}}
     """
     results = {}
 
-    def find_subconstructs_for_contrast(contrast_name: str) -> List[str]:
-        """Find all subconstructs that contain the given contrast."""
-        subconstructs = []
-        for subconstruct, contrasts in contrast_to_subconstruct_map.items():
+    def find_constructs_for_contrast(contrast_name: str) -> List[str]:
+        """Find all constructs that contain the given contrast."""
+        constructs = []
+        for construct, contrasts in construct_to_contrast_map.items():
             if contrast_name in contrasts:
-                subconstructs.append(subconstruct)
-        return subconstructs
+                constructs.append(construct)
+        return constructs
 
     with h5py.File(hdf5_path, 'r') as f:
         available_contrasts = list(f.keys())
@@ -135,27 +135,27 @@ def compute_across_construct_similarity(
             contrast_group = f[contrast_name]
             results[contrast_name] = {}
 
-            # Find which subconstructs this contrast belongs to
-            subconstructs = find_subconstructs_for_contrast(contrast_name)
+            # Find which constructs this contrast belongs to
+            constructs = find_constructs_for_contrast(contrast_name)
 
             for parcel_name in contrast_group.keys():
                 results[contrast_name][parcel_name] = {}
 
-                for subconstruct in subconstructs:
-                    # Get all contrasts in this subconstruct that are available in the HDF5
-                    subconstruct_contrasts = [
+                for construct in constructs:
+                    # Get all contrasts in this construct that are available in the HDF5
+                    construct_contrasts = [
                         c
-                        for c in contrast_to_subconstruct_map[subconstruct]
+                        for c in construct_to_contrast_map[construct]
                         if c in available_contrasts
                     ]
 
-                    if len(subconstruct_contrasts) < 2:
+                    if len(construct_contrasts) < 2:
                         # Skip if less than 2 contrasts available for correlation
                         continue
 
-                    # Collect all voxel values across contrasts in this subconstruct
+                    # Collect all voxel values across contrasts in this construct
                     all_contrast_voxels = []
-                    for sc_contrast in subconstruct_contrasts:
+                    for sc_contrast in construct_contrasts:
                         sc_contrast_group = f[sc_contrast]
                         if parcel_name not in sc_contrast_group:
                             continue
@@ -183,9 +183,9 @@ def compute_across_construct_similarity(
                     upper_tri = np.triu(corr_matrix, k=1)
                     upper_tri_values = upper_tri[upper_tri != 0]
 
-                    # Mean across-contrast correlation for this subconstruct
+                    # Mean across-contrast correlation for this construct
                     if upper_tri_values.size > 0:
-                        results[contrast_name][parcel_name][subconstruct] = np.mean(
+                        results[contrast_name][parcel_name][construct] = np.mean(
                             upper_tri_values
                         )
 

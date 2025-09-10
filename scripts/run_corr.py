@@ -10,6 +10,7 @@ Computes simple upper triangle correlations with averaging:
 """
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -18,79 +19,8 @@ import numpy as np
 import h5py
 
 from network_parcel_corr.main import run_analysis
-
-
-# Subconstruct mapping for cognitive constructs
-CONTRAST_TO_SUBCONSTRUCT_MAP = {
-    'Active Maintenance': [
-        'task-nBack_contrast-match-mismatch',
-        'task-nBack_contrast-twoBack-oneBack',
-    ],
-    'Flexible Updating': [
-        'task-cuedTS_contrast-cue_switch_cost',
-        'task-cuedTS_contrast-task_switch_cost',
-        'task-cuedTS_contrast-task_switch_cue_switch-task_stay_cue_stay',
-        'task-spatialTS_contrast-cue_switch_cost',
-        'task-spatialTS_contrast-task_switch_cost',
-        'task-spatialTS_contrast-task_switch_cue_switch-task_stay_cue_stay',
-    ],
-    'Limited Capacity': [
-        'task-nBack_contrast-twoBack-oneBack',
-    ],
-    'Interference Control': [
-        'task-flanker_contrast-incongruent-congruent',
-        'task-directedForgetting_contrast-neg-con',
-    ],
-    'Goal Selection': [
-        'task-cuedTS_contrast-cue_switch_cost',
-        'task-spatialTS_contrast-cue_switch_cost',
-        'task-stopSignal_contrast-go',
-        'task-goNogo_contrast-go',
-    ],
-    'Updating Representation and Maintenance': ['task-nBack_contrast-match-mismatch'],
-    'Response Selection': [
-        'task-flanker_contrast-incongruent-congruent',
-        'task-stopSignal_contrast-go',
-        'task-goNogo_contrast-go',
-    ],
-    'Inhibition Suppression': [
-        'task-stopSignal_contrast-stop_success',
-        'task-stopSignal_contrast-stop_success-go',
-        'task-stopSignal_contrast-stop_success-stop_failure',
-        'task-goNogo_contrast-nogo_success',
-        'task-goNogo_contrast-nogo_success-go',
-    ],
-    'Performance Monitoring': [
-        'task-stopSignal_contrast-stop_failure',
-        'task-stopSignal_contrast-stop_failure-go',
-        'task-stopSignal_contrast-stop_failure-stop_success',
-    ],
-    'Attention': [
-        'task-flanker_contrast-incongruent-congruent',
-        'task-cuedTS_contrast-task_switch_cue_switch-task_stay_cue_stay',
-        'task-spatialTS_contrast-task_switch_cue_switch-task_stay_cue_stay',
-    ],
-    'Task Baseline': [
-        'task-cuedTS_contrast-task-baseline',
-        'task-directedForgetting_contrast-task-baseline',
-        'task-flanker_contrast-task-baseline',
-        'task-goNogo_contrast-task-baseline',
-        'task-nBack_contrast-task-baseline',
-        'task-shapeMatching_contrast-task-baseline',
-        'task-spatialTS_contrast-task-baseline',
-        'task-stopSignal_contrast-task-baseline',
-    ],
-    'Response Time': [
-        'task-cuedTS_contrast-response_time',
-        'task-directedForgetting_contrast-response_time',
-        'task-flanker_contrast-response_time',
-        'task-goNogo_contrast-response_time',
-        'task-nBack_contrast-response_time',
-        'task-shapeMatching_contrast-response_time',
-        'task-spatialTS_contrast-response_time',
-        'task-stopSignal_contrast-response_time',
-    ],
-}
+from network_parcel_corr.core.similarity import compute_across_construct_similarity
+from network_parcel_corr.data.construct_mappings import CONSTRUCT_TO_CONTRAST_MAP
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -128,7 +58,21 @@ def get_parser() -> argparse.ArgumentParser:
         required=True,
         help='Path to JSON file containing exclusions.',
     )
+    parser.add_argument(
+        '--construct-contrast-map',
+        type=str,
+        help='Path to JSON file containing construct-to-contrast mapping. If not provided, uses default mapping.',
+    )
     return parser
+
+
+def load_construct_contrast_map(map_file: str = None) -> dict:
+    """Load construct-to-contrast mapping from JSON file or use default."""
+    if map_file:
+        with open(map_file, 'r') as f:
+            return json.load(f)
+    else:
+        return CONSTRUCT_TO_CONTRAST_MAP
 
 
 def setup_logging(output_dir: Path) -> logging.Logger:
@@ -189,6 +133,22 @@ def save_results_to_hdf5(results: dict, hdf5_path: Path) -> None:
                     ]
                     parcel_group.attrs['parcel_classification'] = classification
 
+                # Add across-construct similarity results
+                if (
+                    'across_construct_similarities' in results
+                    and contrast_name in results['across_construct_similarities']
+                    and parcel_name
+                    in results['across_construct_similarities'][contrast_name]
+                ):
+                    construct_similarities = results['across_construct_similarities'][
+                        contrast_name
+                    ][parcel_name]
+                    for construct, similarity in construct_similarities.items():
+                        attr_name = (
+                            f'across_construct_similarity_{construct.replace(" ", "_")}'
+                        )
+                        parcel_group.attrs[attr_name] = similarity
+
         # Add global means as top-level attributes
         if all_within_values:
             f.attrs['mean_within_subject_similarity'] = np.mean(all_within_values)
@@ -208,6 +168,14 @@ def main():
     logger.info(f'Atlas: Schaefer {args.atlas_parcels} parcels')
     logger.info(f'Exclusions file: {args.exclusions_file}')
 
+    # Load construct-to-contrast mapping
+    construct_map = load_construct_contrast_map(args.construct_contrast_map)
+    if args.construct_contrast_map:
+        logger.info(f'Using construct-contrast map from: {args.construct_contrast_map}')
+    else:
+        logger.info('Using default construct-contrast mapping')
+    logger.info(f'Number of constructs: {len(construct_map)}')
+
     try:
         # Run the analysis using our modular package
         results = run_analysis(
@@ -217,6 +185,13 @@ def main():
             exclusions_file=args.exclusions_file,
             atlas_parcels=args.atlas_parcels,
         )
+
+        # Compute across-construct similarity
+        logger.info('Computing across-construct similarity...')
+        across_construct_similarities = compute_across_construct_similarity(
+            results['hdf5_path'], construct_map
+        )
+        results['across_construct_similarities'] = across_construct_similarities
 
         # Log results summary
         logger.info('\n--- Analysis Summary ---')
@@ -251,6 +226,16 @@ def main():
             logger.info(
                 f'Overall mean between-subject similarity: {np.mean(between_means):.3f}'
             )
+
+        # Log across-construct similarity summary
+        if 'across_construct_similarities' in results:
+            logger.info('\n--- Across-Construct Similarity Summary ---')
+            for contrast, parcels in results['across_construct_similarities'].items():
+                for parcel, constructs in parcels.items():
+                    for construct, similarity in constructs.items():
+                        logger.info(
+                            f'{contrast} - {parcel} - {construct}: {similarity:.3f}'
+                        )
 
         # Log parcel classifications summary
         all_classifications = {}

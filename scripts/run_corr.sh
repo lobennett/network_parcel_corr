@@ -18,6 +18,7 @@ mkdir -p ./log
 
 # Run on subjects specified after --subjects flag (space-deliminated)
 # Add --exclusions-file flag if you have an exclusions file
+# Add --construct-contrast-map flag if you have a custom JSON mapping file
 uv run python3 $script --output-dir "./output" \
     --exclusions-file "/scratch/users/logben/poldrack_glm/exclusions.json" \
     --subjects sub-s03 sub-s10

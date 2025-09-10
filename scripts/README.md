@@ -24,6 +24,7 @@ uv run python3 scripts/run_corr.py --help
 - `--input-dir`: Input directory containing subject data (default: /scratch/users/logben/poldrack_glm/level1/output)
 - `--output-dir`: Output directory for results (default: /scratch/users/logben/poldrack_glm/correlations/output)
 - `--atlas-parcels`: Number of Schaefer atlas parcels (default: 400)
+- `--construct-contrast-map`: Path to JSON file containing construct-to-contrast mapping (default: uses built-in mapping)
 
 **Example:**
 
@@ -31,7 +32,8 @@ uv run python3 scripts/run_corr.py --help
 uv run python3 scripts/run_corr.py \
     --output-dir "./output" \
     --exclusions-file "/path/to/exclusions.json" \
-    --subjects sub-s03 sub-s10 sub-s19
+    --subjects sub-s03 sub-s10 sub-s19 \
+    --construct-contrast-map "./example_construct_mapping.json"
 ```
 
 ### `run_corr.sh`
@@ -61,6 +63,7 @@ The scripts perform the following steps:
 5. **Similarity Analysis**:
    - **Within-Subject**: Mean correlations across sessions within each subject
    - **Between-Subject**: Correlations between different subjects
+   - **Across-Construct**: Correlations across contrasts within cognitive constructs
 6. **Parcel Classification**:
    - **Variable**: `(within + between) < 0.1`
    - **Individual Fingerprint**: `(within - between) < 0.1`
@@ -71,7 +74,7 @@ The scripts perform the following steps:
 
 Results are saved to:
 
-- `./output/all_contrasts.h5`: Complete HDF5 dataset with similarity values and classifications
+- `./output/all_contrasts.h5`: Complete HDF5 dataset with similarity values (within/between/across-construct) and classifications
 - `./output/correlation_analysis.log`: Detailed analysis log
 - SLURM logs (if using `run_corr.sh`): `./log/run_correlations_exclusions_*.out/err`
 
