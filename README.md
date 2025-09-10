@@ -210,19 +210,6 @@ Core dependencies managed by `uv`:
 - `h5py`: HDF5 file operations
 - `templateflow`: Brain atlas access
 
-## Citation
-
-If you use this software in your research, please cite:
-
-```bibtex
-@software{network_parcel_corr,
-  title={Network Parcel Correlation Analysis},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/lobennett/network_parcel_corr}
-}
-```
-
 ## License
 
 [MIT](./LICENSE)
