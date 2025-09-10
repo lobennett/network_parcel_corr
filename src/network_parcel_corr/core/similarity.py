@@ -58,7 +58,8 @@ def compute_within_subject_similarity(hdf5_path: Path) -> Dict[str, Dict[str, fl
 def compute_between_subject_similarity(hdf5_path: Path) -> Dict[str, Dict[str, float]]:
     """
     Compute between-subject correlations for each contrast-parcel.
-    Uses all voxel values from each subject's sessions to compute correlations between subjects.
+    Only includes correlations between sessions from DIFFERENT subjects.
+    Excludes all within-subject correlations.
     """
     results = {}
 
@@ -70,27 +71,41 @@ def compute_between_subject_similarity(hdf5_path: Path) -> Dict[str, Dict[str, f
             for parcel_name in contrast_group.keys():
                 parcel_group = contrast_group[parcel_name]
 
-                # Collect ALL voxel values from all subject sessions
-                all_session_voxels = []
+                # Collect voxel values organized by subject
+                subject_sessions = defaultdict(list)
+                session_info = []  # Track (voxel_values, subject) for each session
+
                 for record_name in parcel_group.keys():
                     record = parcel_group[record_name]
+                    subject = record.attrs['subject']
                     voxel_values = record['voxel_values'][:]
-                    all_session_voxels.append(voxel_values)
 
-                if len(all_session_voxels) < 2:
+                    subject_sessions[subject].append(voxel_values)
+                    session_info.append((voxel_values, subject))
+
+                if len(subject_sessions) < 2:
+                    # Need at least 2 subjects for between-subject comparison
                     continue
 
-                # Stack all sessions as columns and compute correlation matrix for upper triangle extraction
-                session_matrix = np.column_stack(all_session_voxels)
-                corr_matrix = np.corrcoef(session_matrix.T)
+                # Compute only between-subject correlations
+                between_subject_correlations = []
 
-                # Extract upper triangle (excluding diagonal)
-                upper_tri = np.triu(corr_matrix, k=1)
-                upper_tri_values = upper_tri[upper_tri != 0]
+                for i in range(len(session_info)):
+                    for j in range(i + 1, len(session_info)):
+                        voxels_i, subject_i = session_info[i]
+                        voxels_j, subject_j = session_info[j]
+
+                        # Only correlate if sessions are from different subjects
+                        if subject_i != subject_j:
+                            correlation = np.corrcoef(voxels_i, voxels_j)[0, 1]
+                            if not np.isnan(correlation):
+                                between_subject_correlations.append(correlation)
 
                 # Mean between-subject correlation
-                if upper_tri_values.size > 0:
-                    results[contrast_name][parcel_name] = np.mean(upper_tri_values)
+                if between_subject_correlations:
+                    results[contrast_name][parcel_name] = np.mean(
+                        between_subject_correlations
+                    )
 
     return results
 

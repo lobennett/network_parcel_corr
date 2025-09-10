@@ -167,19 +167,34 @@ class TestSimilarityCalculations:
             contrast_group = f.create_group('test_contrast')
             parcel_group = contrast_group.create_group('test_parcel')
 
-            # Create records for different subjects
+            # Create records for different subjects with distinct patterns
             np.random.seed(42)
-            base_data = np.random.randn(100).astype(np.float32)
 
-            for subj_idx, session in [(1, 1), (1, 2), (2, 1), (2, 2)]:
-                record_name = f'sub-s{subj_idx:02d}_ses-{session:02d}_run-01'
+            # Subject 1 sessions - similar pattern
+            subj1_base = np.random.randn(100).astype(np.float32)
+            for session in [1, 2]:
+                record_name = f'sub-s01_ses-{session:02d}_run-01'
                 record_group = parcel_group.create_group(record_name)
-                record_group.attrs['subject'] = f'sub-s{subj_idx:02d}'
+                record_group.attrs['subject'] = 'sub-s01'
                 record_group.attrs['session'] = f'ses-{session:02d}'
 
-                # Add subject-specific variation
-                subject_data = base_data + np.random.randn(100) * 0.2
-                record_group.create_dataset('voxel_values', data=subject_data)
+                # Subject 1 sessions are similar to each other
+                session_data = subj1_base + np.random.randn(100) * 0.1
+                record_group.create_dataset('voxel_values', data=session_data)
+
+            # Subject 2 sessions - different pattern
+            subj2_base = (
+                np.random.randn(100).astype(np.float32) + 5.0
+            )  # Different from subject 1
+            for session in [1, 2]:
+                record_name = f'sub-s02_ses-{session:02d}_run-01'
+                record_group = parcel_group.create_group(record_name)
+                record_group.attrs['subject'] = 'sub-s02'
+                record_group.attrs['session'] = f'ses-{session:02d}'
+
+                # Subject 2 sessions are similar to each other but different from subject 1
+                session_data = subj2_base + np.random.randn(100) * 0.1
+                record_group.create_dataset('voxel_values', data=session_data)
 
         # Compute between-subject similarity
         results = compute_between_subject_similarity(hdf5_path)
@@ -189,6 +204,9 @@ class TestSimilarityCalculations:
 
         similarity = results['test_contrast']['test_parcel']
         assert isinstance(similarity, float)
+
+        # Between-subject similarity should be lower than within-subject
+        # (since we created different patterns for each subject)
 
     def test_classify_parcels(self):
         """Test parcel classification based on similarity values."""
