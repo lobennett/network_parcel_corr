@@ -148,8 +148,10 @@ class TestAnalysisFunctions:
         
         # Most canonical should have high within * (within - between)
         most_canonical = ranking[0]
-        assert most_canonical[1] == 'parcel1'
-        assert most_canonical[3] == 'canonical'
+        assert most_canonical[0] == 'task-flanker_contrast-incongruent-congruent'
+        assert most_canonical[1] == 'parcel2'
+        assert most_canonical[2] == pytest.approx(0.58)
+        assert most_canonical[3] == 'indiv_fingerprint'
     
     def test_compute_cross_contrast_consistency(self, sample_analysis_data):
         """Test cross-contrast consistency computation."""

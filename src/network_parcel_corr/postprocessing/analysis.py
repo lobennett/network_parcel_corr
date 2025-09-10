@@ -213,7 +213,7 @@ def rank_parcels_by_canonicality(
             within_val = within_similarities[contrast_name][parcel_name]
             between_val = between_similarities[contrast_name][parcel_name]
             # Canonicality score: high within similarity with large difference from between
-            canonicality_score = within_val * (within_val - between_val)
+            canonicality_score = within_val - abs(within_val - between_val)
             classification = classifications[contrast_name][parcel_name]
             
             canonicality_scores.append((
