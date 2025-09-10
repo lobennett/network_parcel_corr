@@ -76,7 +76,7 @@ class TestAtlasLoading:
     @patch('network_parcel_corr.atlases.load.pd')
     def test_load_schaefer_atlas_custom_parcels(self, mock_pd, mock_image, mock_tf):
         """Test loading Schaefer atlas with custom number of parcels."""
-        n_parcels = 200
+        n_parcels = 100
 
         # Mock the atlas data
         mock_atlas_data = np.zeros((64, 64, 30), dtype=np.int32)
@@ -98,7 +98,7 @@ class TestAtlasLoading:
         mock_pd.read_csv.return_value = mock_labels_df
 
         # Mock templateflow paths
-        mock_tf.get.side_effect = ['/path/to/atlas200.nii.gz', '/path/to/labels200.tsv']
+        mock_tf.get.side_effect = ['/path/to/atlas100.nii.gz', '/path/to/labels100.tsv']
 
         # Test the function
         atlas_data, atlas_labels = load_schaefer_atlas(n_parcels=n_parcels)

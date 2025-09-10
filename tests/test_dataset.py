@@ -24,7 +24,7 @@ class TestContrastFileDiscovery:
     def test_extract_contrast_info(self):
         """Test extracting information from filenames."""
         filepath = Path(
-            'sub-s01_ses-01_run-01_task-flanker_contrast-incongruent-congruent_rtmodel_effect-size.nii.gz'
+            'sub-s01_ses-01_task-flanker_run-1_contrast-incongruent-congruent_rtmodel-rt_centered_stat-effect-size.nii.gz'
         )
         subject, session, contrast, run = extract_contrast_info(filepath)
 
