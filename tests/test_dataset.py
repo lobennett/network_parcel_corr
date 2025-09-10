@@ -215,16 +215,16 @@ class TestSimilarityCalculations:
         within_correlations = {
             'test_contrast': {
                 'variable_parcel': 0.05,  # Low within + between = variable
-                'fingerprint_parcel': 0.8,  # High within, low difference = fingerprint
-                'canonical_parcel': 0.9,  # High within, high difference = canonical
+                'fingerprint_parcel': 0.8,  # High within, high difference = fingerprint  
+                'canonical_parcel': 0.9,  # High within, low difference = canonical
             }
         }
 
         between_correlations = {
             'test_contrast': {
                 'variable_parcel': 0.04,  # Low within + between = variable
-                'fingerprint_parcel': 0.75,  # High within, low difference = fingerprint
-                'canonical_parcel': 0.2,  # High within, high difference = canonical
+                'fingerprint_parcel': 0.2,  # High within, high difference = fingerprint
+                'canonical_parcel': 0.85,  # High within, low difference = canonical
             }
         }
 

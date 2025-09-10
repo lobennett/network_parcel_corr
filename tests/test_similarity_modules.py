@@ -281,20 +281,20 @@ class TestClassifySingleParcel:
         
     def test_individual_fingerprint_classification(self):
         """Test individual fingerprint classification."""
-        result = classify_single_parcel(0.15, 0.12, threshold=0.1)
+        result = classify_single_parcel(0.8, 0.2, threshold=0.1)
         assert result == 'indiv_fingerprint'
         
     def test_canonical_classification(self):
         """Test canonical parcel classification."""
-        result = classify_single_parcel(0.8, 0.2, threshold=0.1)
+        result = classify_single_parcel(0.15, 0.12, threshold=0.1)
         assert result == 'canonical'
         
     def test_edge_cases(self):
         """Test edge cases near threshold."""
         # Exactly at threshold for variable
         result = classify_single_parcel(0.05, 0.05, threshold=0.1)
-        assert result == 'indiv_fingerprint'  # sum equals threshold, so not variable
+        assert result == 'canonical'  # sum equals threshold, so not < threshold, hence not variable
         
         # Exactly at threshold for individual fingerprint
         result = classify_single_parcel(0.2, 0.1, threshold=0.1)
-        assert result == 'canonical'  # difference equals threshold, so not indiv_fingerprint
+        assert result == 'canonical'  # difference equals threshold, so not > threshold, hence canonical

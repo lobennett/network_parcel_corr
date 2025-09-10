@@ -407,7 +407,7 @@ def classify_single_parcel(
     """
     if (within_val + between_val) < threshold:
         return 'variable'
-    elif (within_val - between_val) < threshold:
+    elif (within_val - between_val) > threshold:
         return 'indiv_fingerprint'
     else:
         return 'canonical'
