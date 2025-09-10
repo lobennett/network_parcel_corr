@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 import tempfile
 
-from network_parcel_corr.io import load_nifti, InvalidNiftiError
+from network_parcel_corr.io.readers import load_nifti, InvalidNiftiError
 
 
 class TestNIFTILoader:

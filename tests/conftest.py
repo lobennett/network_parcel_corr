@@ -1,6 +1,7 @@
 """Pytest configuration and fixtures for network_parcel_corr tests."""
 
 import tempfile
+import json
 from pathlib import Path
 
 import nibabel as nib
@@ -64,27 +65,6 @@ def test_atlas_nifti(test_atlas_data, temp_dir):
 
 
 @pytest.fixture
-def empty_parcel_atlas():
-    """Create an atlas with an empty parcel (no voxels)."""
-    atlas = np.zeros((10, 10, 10), dtype=np.int32)
-    atlas[0:3, 0:3, 0:3] = 1  # Parcel 1
-    atlas[5:8, 5:8, 5:8] = 2  # Parcel 2
-    # Parcel 3 doesn't exist (empty)
-    atlas[0:2, 8:10, 0:2] = 4  # Parcel 4 (skip 3)
-    return atlas
-
-
-@pytest.fixture
-def single_voxel_parcel_atlas():
-    """Create an atlas with single-voxel parcels."""
-    atlas = np.zeros((10, 10, 10), dtype=np.int32)
-    atlas[0, 0, 0] = 1  # Single voxel parcel
-    atlas[5:7, 5:7, 5:7] = 2  # Regular parcel
-    atlas[9, 9, 9] = 3  # Another single voxel
-    return atlas
-
-
-@pytest.fixture
 def non_existent_file(temp_dir):
     """Return path to a non-existent file."""
     return temp_dir / 'non_existent.nii.gz'
@@ -96,3 +76,112 @@ def invalid_nifti_file(temp_dir):
     filepath = temp_dir / 'invalid.nii.gz'
     filepath.write_text('This is not a valid nifti file')
     return filepath
+
+
+@pytest.fixture
+def sample_dataset(temp_dir):
+    """Create a sample dataset
+
+    Dataset structure:
+    - Files follow pattern: */indiv_contrasts/*effect-size.nii.gz
+    - Naming: sub-s01_ses-01_run-01_task-flanker_contrast-incongruent-congruent_rtmodel_effect-size.nii.gz
+    """
+    dataset = {
+        'base_dir': temp_dir,
+        'subjects': ['sub-s01', 'sub-s02'],
+        'file_paths': [],
+        'exclusions_file': temp_dir / 'exclusions.json',
+    }
+
+    # Create exclusions file
+    exclusions = {'fmriprep_exclusions': [], 'behavioral_exclusions': []}
+    with open(dataset['exclusions_file'], 'w') as f:
+        json.dump(exclusions, f)
+
+    # Define test contrasts
+    contrasts = [
+        'task-flanker_contrast-incongruent-congruent',
+        'task-nBack_contrast-high-load-low-load',
+        'task-shapeMatching_contrast-mainvars',
+    ]
+
+    # Create synthetic contrast map data
+    np.random.seed(42)
+    base_data = np.random.randn(10, 10, 10).astype(np.float32)
+    affine = np.eye(4)
+
+    # Generate files for 2 subjects, 2 sessions, 3 contrasts each
+    for subject_id in dataset['subjects']:
+        subject_dir = temp_dir / subject_id
+
+        for ses_idx in range(1, 3):  # 2 sessions each
+            session_id = f'ses-{ses_idx:02d}'
+            session_dir = subject_dir / session_id / 'indiv_contrasts'
+            session_dir.mkdir(parents=True, exist_ok=True)
+
+            for run_idx, contrast in enumerate(contrasts, 1):
+                run_id = f'run-{run_idx:02d}'
+
+                # Create filename
+                filename = f'{subject_id}_{session_id}_{run_id}_{contrast}_rtmodel_effect-size.nii.gz'
+                filepath = session_dir / filename
+
+                # Create unique data for each file
+                seed_val = hash(f'{subject_id}_{session_id}_{run_id}_{contrast}') % 1000
+                np.random.seed(seed_val)
+                data = base_data + np.random.randn(10, 10, 10) * 0.1
+
+                img = nib.Nifti1Image(data, affine)
+                nib.save(img, filepath)
+                dataset['file_paths'].append(filepath)
+
+    return dataset
+
+
+@pytest.fixture
+def sample_dataset_flat_structure(temp_dir):
+    """Create a sample dataset with flat directory structure (all files in one directory).
+
+    Same dataset as sample_dataset but with all contrast maps in a single directory
+    for testing different organizational patterns.
+    """
+    dataset = {'base_dir': temp_dir, 'file_paths': []}
+
+    # Define the three contrasts
+    contrasts = [
+        'flanker_incongruent-congruent',
+        'nBack_high-load-low-load',
+        'shapeMatching_mainvars',
+    ]
+
+    # Create synthetic contrast map data
+    np.random.seed(42)  # For reproducible test data
+    contrast_data = np.random.randn(64, 64, 30).astype(np.float32)
+    affine = np.eye(4)
+    affine[0, 0] = 3.0
+    affine[1, 1] = 3.0
+    affine[2, 2] = 3.0
+
+    # Generate all contrast maps in flat structure
+    for sub_idx in range(1, 3):  # 2 subjects
+        for ses_idx in range(1, 6):  # 5 sessions
+            for run_idx, contrast in enumerate(contrasts, 1):  # 3 contrasts
+                subject_id = f'sub-s{sub_idx:02d}'
+                session_id = f'ses-{ses_idx:02d}'
+                run_id = f'run-{run_idx:02d}'
+                contrast_name = f'{subject_id}_{session_id}_{run_id}_{contrast}'
+
+                # Create contrast map file in flat structure
+                contrast_filename = f'{contrast_name}.nii.gz'
+                contrast_filepath = temp_dir / contrast_filename
+
+                # Add variation to contrast data with consistent seeding
+                seed_val = hash(contrast_name) % 1000
+                np.random.seed(seed_val)
+                varied_data = contrast_data + np.random.randn(64, 64, 30) * 0.1
+                img = nib.Nifti1Image(varied_data, affine)
+                nib.save(img, contrast_filepath)
+
+                dataset['file_paths'].append(contrast_filepath)
+
+    return dataset
