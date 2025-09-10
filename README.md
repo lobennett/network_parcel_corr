@@ -131,9 +131,9 @@ The analysis automatically generates comprehensive CSV reports for detailed anal
 
 - **`parcel_classifications.csv`**: Detailed classifications for all contrast-parcel combinations
 - **`classification_summary.csv`**: Summary statistics by contrast and overall totals
-- **`fingerprint_ranking.csv`**: Top parcels ranked by individual fingerprint strength 
-- **`variability_ranking.csv`**: Top parcels ranked by variability (instability)
-- **`canonicality_ranking.csv`**: Top parcels ranked by canonical activation patterns
+- **`most_fingerprint_parcels.csv`**: Top parcels ranked by individual fingerprint strength 
+- **`most_variable_parcels.csv`**: Top parcels ranked by variability (instability)
+- **`most_canonical_parcels.csv`**: Top parcels ranked by canonical activation patterns
 - **`cross_contrast_consistency.csv`**: Classification consistency across contrasts
 
 ### Logs and Reports
