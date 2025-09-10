@@ -117,11 +117,13 @@ class TestExtractParcelData:
         mock_extract.assert_any_call([Path('file1.nii.gz'), Path('file2.nii.gz')], atlas_data, atlas_labels)
         mock_extract.assert_any_call([Path('file3.nii.gz')], atlas_data, atlas_labels)
         
-        # Verify logging
-        assert mock_print.call_count == 3
+        # Verify logging (updated for enhanced progress reporting)
+        assert mock_print.call_count == 5  # Original 3 + 2 completion messages
         mock_print.assert_any_call('Extracting parcel data...')
-        mock_print.assert_any_call('Processing faces_vs_fixation (2 files)...')
-        mock_print.assert_any_call('Processing math_vs_story (1 files)...')
+        mock_print.assert_any_call('Processing faces_vs_fixation (2 files) [1/2]...')
+        mock_print.assert_any_call('✓ Completed faces_vs_fixation - found 1 parcels with data')
+        mock_print.assert_any_call('Processing math_vs_story (1 files) [2/2]...')
+        mock_print.assert_any_call('✓ Completed math_vs_story - found 1 parcels with data')
         
         # Verify return values
         expected = {

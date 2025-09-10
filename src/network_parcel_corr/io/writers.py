@@ -248,6 +248,9 @@ def create_hdf5_contrast_group(
         validate_parcel_voxel_consistency(parcel_name, records, contrast_name)
 
     # Create contrast group
+    if contrast_name in hdf5_file:
+        raise ValueError(f'Contrast group {contrast_name} already exists')
+    
     contrast_group = hdf5_file.create_group(contrast_name)
     contrast_group.attrs['contrast_name'] = contrast_name
     contrast_group.attrs['n_parcels'] = len(grouped_by_parcel)
@@ -277,12 +280,23 @@ def save_to_hdf5(grouped_by_contrast: Dict, output_dir: Path) -> Path:
     
     # Remove existing file if it exists to ensure clean start
     if combined_hdf5_path.exists():
-        combined_hdf5_path.unlink()
+        try:
+            combined_hdf5_path.unlink()
+            print(f'Removed existing HDF5 file: {combined_hdf5_path}')
+        except Exception as e:
+            print(f'Warning: Could not remove existing HDF5 file {combined_hdf5_path}: {e}')
+            # Try to work around by using a different filename
+            import time
+            timestamp = int(time.time())
+            combined_hdf5_path = output_dir / f'all_contrasts_{timestamp}.h5'
+            print(f'Using alternative filename: {combined_hdf5_path}')
 
     with h5py.File(combined_hdf5_path, 'w') as f:
         # Add top-level metadata
+        contrast_names = list(grouped_by_contrast.keys())
+        
         f.attrs['n_contrasts'] = len(grouped_by_contrast)
-        f.attrs['contrast_names'] = list(grouped_by_contrast.keys())
+        f.attrs['contrast_names'] = contrast_names
 
         for contrast_name, grouped_by_parcel in grouped_by_contrast.items():
             create_hdf5_contrast_group(f, contrast_name, grouped_by_parcel)

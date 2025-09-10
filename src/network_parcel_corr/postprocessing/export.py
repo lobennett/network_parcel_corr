@@ -213,7 +213,7 @@ def export_ranked_parcels_csv(
     )
     
     df_variability = pd.DataFrame(
-        [(contrast, parcel, -score, classification) for contrast, parcel, score, classification in variability_ranking[:top_n]],
+        [(contrast, parcel, score, classification) for contrast, parcel, score, classification in variability_ranking[:top_n]],
         columns=['contrast', 'parcel', 'variability_score', 'classification']
     )
     df_variability['rank'] = range(1, len(df_variability) + 1)

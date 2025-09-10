@@ -19,6 +19,7 @@ import numpy as np
 import h5py
 
 from network_parcel_corr.main import run_analysis
+from network_parcel_corr.parallel.main import parallel_run_analysis
 from network_parcel_corr.core.similarity import compute_across_construct_similarity
 from network_parcel_corr.data.construct_mappings import CONSTRUCT_TO_CONTRAST_MAP
 from network_parcel_corr.postprocessing.export import export_all_postprocessing_results
@@ -63,6 +64,17 @@ def get_parser() -> argparse.ArgumentParser:
         '--construct-contrast-map',
         type=str,
         help='Path to JSON file containing construct-to-contrast mapping. If not provided, uses default mapping.',
+    )
+    parser.add_argument(
+        '--parallel',
+        action='store_true',
+        help='Use parallel processing with 16 CPUs for optimal performance',
+    )
+    parser.add_argument(
+        '--max-workers',
+        type=int,
+        default=None,
+        help='Maximum number of worker threads (default: auto-detect, max 16)',
     )
     return parser
 
@@ -178,14 +190,26 @@ def main():
     logger.info(f'Number of constructs: {len(construct_map)}')
 
     try:
-        # Run the analysis using our modular package
-        results = run_analysis(
-            subjects=args.subjects,
-            input_dir=args.input_dir,
-            output_dir=args.output_dir,
-            exclusions_file=args.exclusions_file,
-            atlas_parcels=args.atlas_parcels,
-        )
+        # Choose analysis pipeline based on --parallel flag
+        if args.parallel:
+            logger.info('Using PARALLEL analysis pipeline with 16-CPU optimization...')
+            results = parallel_run_analysis(
+                subjects=args.subjects,
+                input_dir=args.input_dir,
+                output_dir=args.output_dir,
+                exclusions_file=args.exclusions_file,
+                atlas_parcels=args.atlas_parcels,
+                max_workers=args.max_workers,
+            )
+        else:
+            logger.info('Using SERIAL analysis pipeline...')
+            results = run_analysis(
+                subjects=args.subjects,
+                input_dir=args.input_dir,
+                output_dir=args.output_dir,
+                exclusions_file=args.exclusions_file,
+                atlas_parcels=args.atlas_parcels,
+            )
 
         # Count variable parcels for logging
         variable_parcel_count = 0

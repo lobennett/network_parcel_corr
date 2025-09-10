@@ -134,7 +134,9 @@ def rank_parcels_by_variability(
     classifications: Dict[str, Dict[str, str]]
 ) -> List[Tuple[str, str, float, str]]:
     """
-    Rank parcels by variability (low within + between similarity).
+    Rank parcels by variability (low within + between similarity indicates high variability).
+    
+    Returns parcels ranked from most variable (lowest within + between sum) to least variable.
     
     Parameters
     ----------
@@ -149,6 +151,7 @@ def rank_parcels_by_variability(
     -------
     List[Tuple[str, str, float, str]]
         Ranked list of (contrast, parcel, variability_score, classification)
+        where variability_score = within + between (lower = more variable)
     """
     variability_scores = []
     
@@ -163,14 +166,14 @@ def rank_parcels_by_variability(
                 
             within_val = within_similarities[contrast_name][parcel_name]
             between_val = between_similarities[contrast_name][parcel_name]
-            variability_score = -(within_val + between_val)  # Negative for ascending sort (most variable first)
+            variability_score = within_val + between_val  # Sum for direct comparison
             classification = classifications[contrast_name][parcel_name]
             
             variability_scores.append((
                 contrast_name, parcel_name, variability_score, classification
             ))
     
-    # Sort by variability score (ascending - most variable first)
+    # Sort by variability score (ascending - lowest sum = most variable first)
     return sorted(variability_scores, key=lambda x: x[2])
 
 

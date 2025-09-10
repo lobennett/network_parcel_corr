@@ -51,6 +51,13 @@ class TestFilenameExtraction:
         filename2 = 'sub-s01_ses-02_task-flanker_run-02_contrast-incongruent-congruent_rtmodel-rt_stat-effect-size.nii.gz'
         assert extract_contrast_name(filename2) == 'task-flanker_contrast-incongruent-congruent'
         
+        # Test contrast names with underscores (the bug case)
+        filename3 = 'sub-s03_ses-01_task-spatialTS_run-1_contrast-task_switch_cost_rtmodel-rt_centered_stat-effect-size.nii.gz'
+        assert extract_contrast_name(filename3) == 'task-spatialTS_contrast-task_switch_cost'
+        
+        filename4 = 'sub-s03_ses-01_task-spatialTS_run-1_contrast-task_switch_cue_switch-task_stay_cue_stay_rtmodel-rt_centered_stat-effect-size.nii.gz'
+        assert extract_contrast_name(filename4) == 'task-spatialTS_contrast-task_switch_cue_switch-task_stay_cue_stay'
+        
         assert extract_contrast_name('no_task_or_contrast_here.nii.gz') is None
         
     def test_extract_run_id(self):

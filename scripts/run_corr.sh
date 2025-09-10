@@ -3,13 +3,20 @@
 #SBATCH --time=02:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem-per-cpu=4G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=4G
 #SBATCH --output=./log/run_correlations_exclusions_%j.out
 #SBATCH --error=./log/run_correlations_exclusions_%j.err
 #SBATCH --partition=normal,russpold
 
-# Script to run parcel-based correlation analysis
+# Script to run parcel-based correlation analysis with 16-CPU parallel optimization
+
+# Set optimal environment variables for NumPy threading
+export OMP_NUM_THREADS=16
+export MKL_NUM_THREADS=16
+export OPENBLAS_NUM_THREADS=16
+export VECLIB_MAXIMUM_THREADS=16
+export NUMEXPR_NUM_THREADS=16
 
 script=./scripts/run_corr.py
 
@@ -21,7 +28,8 @@ mkdir -p ./log
 # Add --construct-contrast-map flag if you have a custom JSON mapping file
 uv run python3 $script --output-dir "./output" \
     --exclusions-file "/scratch/users/logben/poldrack_glm/exclusions.json" \
-    --subjects sub-s03 sub-s10
+    --subjects sub-s03 sub-s10 \
+    --parallel
 
 # Example with full subject list (commented out):
 # uv run python3 $script --output-dir "./output" \

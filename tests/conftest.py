@@ -84,7 +84,7 @@ def sample_dataset(temp_dir):
 
     Dataset structure:
     - Files follow pattern: */indiv_contrasts/*effect-size.nii.gz
-    - Naming: sub-s01_ses-01_run-01_task-flanker_contrast-incongruent-congruent_rtmodel_effect-size.nii.gz
+    - Naming: sub-s01_ses-01_run-01_task-flanker_contrast-incongruent-congruent_rtmodel-rt_centered_stat-effect-size.nii.gz
     """
     dataset = {
         'base_dir': temp_dir,
@@ -123,7 +123,7 @@ def sample_dataset(temp_dir):
                 run_id = f'run-{run_idx:02d}'
 
                 # Create filename
-                filename = f'{subject_id}_{session_id}_{run_id}_{contrast}_rtmodel_effect-size.nii.gz'
+                filename = f'{subject_id}_{session_id}_{run_id}_{contrast}_rtmodel-rt_centered_stat-effect-size.nii.gz'
                 filepath = session_dir / filename
 
                 # Create unique data for each file

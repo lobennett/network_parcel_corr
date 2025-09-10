@@ -83,10 +83,16 @@ def extract_parcel_data(
     print('Extracting parcel data...')
     grouped_by_contrast = {}
     
-    for contrast_name, files in contrast_files.items():
-        print(f'Processing {contrast_name} ({len(files)} files)...')
-        parcel_data = extract_and_group_by_parcel(files, atlas_data, atlas_labels)
-        grouped_by_contrast[contrast_name] = parcel_data
+    total_contrasts = len(contrast_files)
+    for i, (contrast_name, files) in enumerate(contrast_files.items(), 1):
+        print(f'Processing {contrast_name} ({len(files)} files) [{i}/{total_contrasts}]...')
+        try:
+            parcel_data = extract_and_group_by_parcel(files, atlas_data, atlas_labels)
+            grouped_by_contrast[contrast_name] = parcel_data
+            print(f'✓ Completed {contrast_name} - found {len(parcel_data)} parcels with data')
+        except Exception as e:
+            print(f'✗ Failed {contrast_name}: {e}')
+            raise
         
     return grouped_by_contrast
 

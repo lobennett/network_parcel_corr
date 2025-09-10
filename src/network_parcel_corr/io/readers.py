@@ -107,11 +107,24 @@ def extract_contrast_name(filename: str) -> Optional[str]:
         return None
     task = task_match.group(1)
     
-    # Extract contrast name  
-    contrast_match = re.search(r'contrast-([^_]+(?:-[^_]+)*)', filename)
-    if not contrast_match:
+    # Extract full contrast name (everything between 'contrast-' and '_rtmodel-' or '_stat-')
+    contrast_start = filename.find('contrast-')
+    if contrast_start == -1:
         return None
-    contrast = contrast_match.group(1)
+    
+    contrast_start += len('contrast-')
+    
+    # Find the end of the contrast (before '_rtmodel-rt_' or '_stat-')
+    rtmodel_pos = filename.find('_rtmodel-', contrast_start)
+    stat_pos = filename.find('_stat-', contrast_start)
+    
+    # Use the earliest valid position
+    end_positions = [pos for pos in [rtmodel_pos, stat_pos] if pos > contrast_start]
+    if not end_positions:
+        return None
+    
+    contrast_end = min(end_positions)
+    contrast = filename[contrast_start:contrast_end]
     
     return f'task-{task}_contrast-{contrast}'
 

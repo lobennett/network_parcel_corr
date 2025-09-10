@@ -134,9 +134,9 @@ class TestAnalysisFunctions:
         
         # Most variable should have lowest within + between similarity
         most_variable = ranking[0]
-        # Actually parcel2 from flanker has highest variability score (highest sum)
-        assert most_variable[1] == 'parcel2'
-        assert most_variable[3] == 'indiv_fingerprint'
+        # parcel3 from flanker has lowest variability score (0.03 + 0.01 = 0.04)
+        assert most_variable[1] == 'parcel3'
+        assert most_variable[3] == 'variable'
     
     def test_rank_parcels_by_canonicality(self, sample_analysis_data):
         """Test canonicality ranking."""
@@ -282,10 +282,10 @@ class TestExportFunctions:
             variability_df = pd.read_csv(output_paths['variability'])
             assert len(variability_df) == 6
             
-            # Most variable is actually parcel2 with highest sum
+            # Most variable is parcel3 with lowest sum (0.03 + 0.01 = 0.04)
             top_variable = variability_df.iloc[0]
-            assert top_variable['parcel'] == 'parcel2'
-            assert top_variable['classification'] == 'indiv_fingerprint'
+            assert top_variable['parcel'] == 'parcel3'
+            assert top_variable['classification'] == 'variable'
     
     def test_export_cross_contrast_consistency_csv(self, sample_analysis_data):
         """Test cross-contrast consistency CSV export."""
